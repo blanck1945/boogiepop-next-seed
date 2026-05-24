@@ -1,0 +1,145 @@
+# GitLab CI — boogiepop-next-seed (fullstack Next.js)
+# Mismo patrón que boogiepop-react-seed — ver docs/GITLAB-DEPLOY.md
+#
+# develop: lint + next-build; Docker/ECS MANUAL
+# main: lint + next-build + Docker/ECS AUTOMÁTICO → prod (:latest + ECS)
+#
+# Variables GitLab: ECR_REGISTRY, AWS_* , NEXT_BASE_PATH=/next (build Docker, modo HTTP ALB)
+
+stages:
+  - verify
+  - build
+  - deploy
+
+default:
+  interruptible: true
+
+cache:
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - node_modules/
+
+variables:
+  AWS_DEFAULT_REGION: us-east-1
+  NEXT_ECR_REPOSITORY: boogiepop-next-seed
+  ECS_CLUSTER_NAME: boogiepop-api-cluster
+  ECS_NEXT_SEED_SERVICE_NAME: boogiepop-api-fe-next-seed-svc
+
+lint:
+  stage: verify
+  image: node:22-bookworm-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_TAG'
+    - when: never
+  script:
+    - npm ci
+    - npm run lint
+
+next-build:
+  stage: build
+  image: node:22-bookworm-slim
+  needs: ["lint"]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_TAG'
+    - when: never
+  script:
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - .next/
+    expire_in: 1 week
+
+.docker_publish_next:
+  stage: deploy
+  image: ubuntu:22.04
+  services:
+    - name: docker:24-dind
+      command: ["--tls=false"]
+  needs: ["next-build"]
+  variables:
+    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+    FF_NETWORK_PER_BUILD: "1"
+  before_script:
+    - apt-get update -qq
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl ca-certificates unzip gnupg
+    - install -dm755 /etc/apt/keyrings
+    - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    - chmod a+r /etc/apt/keyrings/docker.gpg
+    - echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu jammy stable" > /etc/apt/sources.list.d/docker.list
+    - apt-get update -qq
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-ce-cli docker-buildx-plugin
+    - curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/awscliv2.zip
+    - unzip -q /tmp/awscliv2.zip -d /tmp
+    - /tmp/aws/install -i /usr/local/aws-cli -b /usr/local/bin
+    - aws sts get-caller-identity
+    - sleep 3
+    - docker info
+    - docker buildx create --name ci-next-build --use 2>/dev/null || docker buildx use ci-next-build
+    - docker run --privileged --rm tonistiigi/binfmt:latest --install all
+    - bash -cx 'REG_HOST=$(echo "${ECR_REGISTRY}" | cut -d/ -f1); aws ecr get-login-password --region "${AWS_DEFAULT_REGION}" | docker login --username AWS --password-stdin "${REG_HOST}"'
+  script:
+    - |
+      set -eux
+      BASE_URI="${ECR_REGISTRY}/${NEXT_ECR_REPOSITORY}"
+      IMAGE_URI="${BASE_URI}:${IMAGE_TAG}"
+      BUILD_ARGS="--build-arg NEXT_BASE_PATH=${NEXT_BASE_PATH:-/next}"
+      COMMON="docker buildx build --platform linux/arm64 --provenance=false --sbom=false --push ${BUILD_ARGS}"
+      if [ "${CI_COMMIT_BRANCH}" = "main" ]; then
+        ${COMMON} -t "${IMAGE_URI}" -t "${BASE_URI}:latest" .
+      elif [ -n "${CI_COMMIT_TAG:-}" ]; then
+        ${COMMON} -t "${IMAGE_URI}" -t "${BASE_URI}:latest" .
+      else
+        ${COMMON} -t "${IMAGE_URI}" -t "${BASE_URI}:develop" .
+      fi
+
+docker-publish-next:
+  extends: .docker_publish_next
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE == "push" && $ECR_REGISTRY'
+      when: manual
+    - when: never
+
+docker-publish-next-prod:
+  extends: .docker_publish_next
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push" && $ECR_REGISTRY'
+      when: on_success
+    - when: never
+
+deploy-next-ecs:
+  stage: deploy
+  image:
+    name: amazon/aws-cli:2.27.25
+    entrypoint: [""]
+  script:
+    - aws sts get-caller-identity
+    - aws ecs update-service --cluster "$ECS_CLUSTER_NAME" --service "$ECS_NEXT_SEED_SERVICE_NAME" --force-new-deployment --region "$AWS_DEFAULT_REGION"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE == "push"'
+      when: manual
+    - when: never
+
+deploy-next-ecs-prod:
+  stage: deploy
+  image:
+    name: amazon/aws-cli:2.27.25
+    entrypoint: [""]
+  needs: ["docker-publish-next-prod"]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push" && $ECR_REGISTRY'
+      when: on_success
+    - when: never
+  script:
+    - aws sts get-caller-identity
+    - aws ecs update-service --cluster "$ECS_CLUSTER_NAME" --service "$ECS_NEXT_SEED_SERVICE_NAME" --force-new-deployment --region "$AWS_DEFAULT_REGION"

@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Boogiepop · Next.js Fullstack Seed
 
-## Getting Started
+Seed **Next.js (App Router) + React + TypeScript** con **Route Handlers** y **`@aws-sdk/*`** en el **mismo repositorio**. Desplegable con el mismo flujo que [boogiepop-react-seed](../boogiepop-react-seed): **Docker → ECR → ECS** (puerto **8080**, health **`/health`**).
 
-First, run the development server:
+Para convenciones de agentes: **[AGENTS.md](AGENTS.md)**.
+
+## ¿Este seed o react-seed?
+
+| Necesitás… | Seed |
+|------------|------|
+| Remote **Module Federation** en el hub (`boogiepopRemote/Shell`) | [boogiepop-react-seed](../boogiepop-react-seed) (Vite) |
+| **React + API + AWS** en un solo repo, sin Nest aparte | **boogiepop-next-seed** (este) |
+| Embed en el hub vía **iframe** (como Streamlit) | Este seed + `iframeUrl` en manifest |
+
+## Qué incluye
+
+| Incluye | Detalle |
+|---------|---------|
+| **Next.js 15 + React 19** | App Router, `output: 'standalone'` para Docker |
+| **Route Handlers** | `app/api/aws-demo/route.ts` — demo S3 read-only |
+| **Tailwind v4** | Tema tipo Streamlit claro (IBM Plex, `.st-*`) |
+| **Health** | `GET /health` → `ok` (ALB/ECS) |
+| **CI GitLab** | Mismo patrón que react-seed: lint → build → ECR → ECS |
+
+## Requisitos
+
+- **Node.js** ≥ 22 (`.nvmrc`)
+- **npm** + `package-lock.json` commiteado
+- AWS **ECR/ECS** solo para deploy CI (opcional en local)
+
+## Scripts
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm ci
+cp .env.example .env.local   # opcional
+npm run dev                  # http://localhost:3000
+npm run build
+npm run start                # producción local (PORT=8080 recomendado)
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Variables de entorno
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Uso |
+|----------|-----|
+| `AWS_REGION` | Región del SDK (default `us-east-1`) |
+| `AWS_DEMO_S3_BUCKET` | Bucket opcional para listar objetos en la demo |
+| `AWS_DEMO_S3_PREFIX` | Prefijo acotado dentro del bucket |
+| `PORT` | Puerto del servidor (default Next 3000 en dev; **8080** en Docker/ECS) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Local:** credenciales vía `AWS_PROFILE`, variables de entorno o `~/.aws/credentials`.  
+**ECS:** task role IAM con permisos mínimos (p. ej. `s3:ListBucket` en bucket demo).
 
-## Learn More
+## Docker local
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+docker build -t boogiepop-next-seed:local .
+docker run --rm -p 8080:8080 \
+  -e AWS_REGION=us-east-1 \
+  -e AWS_DEMO_S3_BUCKET=mi-bucket \
+  boogiepop-next-seed:local
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- App: http://localhost:8080/
+- Health: http://localhost:8080/health
+- Demo API: http://localhost:8080/api/aws-demo
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## CI / deploy
 
-## Deploy on Vercel
+Ver **[docs/GITLAB-DEPLOY.md](docs/GITLAB-DEPLOY.md)** e **[docs/INFRA-TERRAFORM.md](docs/INFRA-TERRAFORM.md)**.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Registro en el hub: **[docs/HUB-MANIFEST.md](docs/HUB-MANIFEST.md)**.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Resumen:
+
+- Repo ECR por defecto: **`boogiepop-next-seed`**
+- Servicio ECS por defecto: **`boogiepop-api-fe-next-seed-svc`** (crear en Terraform/infra antes del primer deploy)
+- **`main`**: push imagen `:latest` + `force-new-deployment` automático
+- **`develop`**: jobs Docker/ECS manuales
+
+## Hub (manifest)
+
+Registrá la app con **`iframeUrl`** apuntando a la URL pública del servicio (patrón Streamlit). **No** modifiques el manifest del hub desde este seed salvo pedido explícito del equipo.
+
+## Licencia
+
+Uso interno seed — añadí la licencia que corresponda antes de distribuir públicamente.

@@ -1,7 +1,14 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
+
+const rawBasePath = process.env.NEXT_BASE_PATH?.trim() ?? ''
+const basePath =
+  rawBasePath === '' || rawBasePath === '/'
+    ? undefined
+    : `/${rawBasePath.replace(/^\/+|\/+$/g, '')}`
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  output: 'standalone',
+  ...(basePath ? { basePath } : {}),
+}
 
-export default nextConfig;
+export default nextConfig
