@@ -51,12 +51,14 @@ Creá el proyecto GitLab y empujá este seed (repo: **https://gitlab.com/boogiep
 
 ```bash
 cd boogiepop-next-seed
-git remote add origin https://gitlab.com/boogiepop-phatom/boogiepop-next-seed.git
+git remote add origin git@gitlab.com:boogiepop-phatom/boogiepop-next-seed.git
 git branch -M main
 git push -u origin main
 ```
 
-Si el remoto ya existe, usá `git remote set-url origin https://gitlab.com/boogiepop-phatom/boogiepop-next-seed.git`.
+HTTPS alternativo: `https://gitlab.com/boogiepop-phatom/boogiepop-next-seed.git`
+
+Si el remoto ya existe: `git remote set-url origin git@gitlab.com:boogiepop-phatom/boogiepop-next-seed.git`
 
 Configuren las variables CI en **Settings → CI/CD → Variables** (mismas credenciales AWS que host/react-seed).
 
