@@ -26,6 +26,8 @@ variables:
   NEXT_ECR_REPOSITORY: boogiepop-next-seed
   ECS_CLUSTER_NAME: boogiepop-api-cluster
   ECS_NEXT_SEED_SERVICE_NAME: boogiepop-api-fe-next-seed-svc
+  ECR_REGISTRY: "653876198281.dkr.ecr.us-east-1.amazonaws.com"
+  NEXT_BASE_PATH: "/next"
 
 lint:
   stage: verify
@@ -71,6 +73,12 @@ next-build:
     DOCKER_HOST: tcp://docker:2375
     FF_NETWORK_PER_BUILD: "1"
   before_script:
+    - |
+      set -eu
+      if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
+        echo "ERROR: faltan AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY en CI/CD Variables."
+        exit 1
+      fi
     - apt-get update -qq
     - DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl ca-certificates unzip gnupg
     - install -dm755 /etc/apt/keyrings
@@ -113,7 +121,7 @@ docker-publish-next:
 docker-publish-next-prod:
   extends: .docker_publish_next
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push" && $ECR_REGISTRY'
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"'
       when: on_success
     - when: never
 
@@ -137,7 +145,7 @@ deploy-next-ecs-prod:
     entrypoint: [""]
   needs: ["docker-publish-next-prod"]
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push" && $ECR_REGISTRY'
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"'
       when: on_success
     - when: never
   script:
