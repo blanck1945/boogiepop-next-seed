@@ -121,14 +121,14 @@ next-build:
 docker-publish-next:
   extends: .docker_publish_next
   rules:
-    - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE == "push" && $ECR_REGISTRY'
+    - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE == "push" && $ECR_REGISTRY && $AWS_ROLE_ARN'
       when: manual
     - when: never
 
 docker-publish-next-prod:
   extends: .docker_publish_next
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push" && $AWS_ROLE_ARN'
       when: on_success
     - when: never
 
@@ -153,7 +153,7 @@ deploy-next-ecs:
     - aws sts get-caller-identity
     - aws ecs update-service --cluster "$ECS_CLUSTER_NAME" --service "$ECS_NEXT_SEED_SERVICE_NAME" --force-new-deployment --region "$AWS_DEFAULT_REGION"
   rules:
-    - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE == "push" && $AWS_ROLE_ARN'
       when: manual
     - when: never
 
@@ -167,7 +167,7 @@ deploy-next-ecs-prod:
       aud: https://gitlab.com
   needs: ["docker-publish-next-prod"]
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push" && $AWS_ROLE_ARN'
       when: on_success
     - when: never
   script:
