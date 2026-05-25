@@ -47,6 +47,7 @@ npm run lint
 | `AWS_DEMO_S3_BUCKET` | Bucket opcional para listar objetos en la demo |
 | `AWS_DEMO_S3_PREFIX` | Prefijo acotado dentro del bucket |
 | `PORT` | Puerto del servidor (default Next 3000 en dev; **8080** en Docker/ECS) |
+| `NEXT_PUBLIC_API_BASE_URL` | Base URL de Boogiepop API para `GET /api/auth/me` en el SDK de auth |
 
 **Local:** credenciales vía `AWS_PROFILE`, variables de entorno o `~/.aws/credentials`.  
 **ECS:** task role IAM con permisos mínimos (p. ej. `s3:ListBucket` en bucket demo).
@@ -81,6 +82,23 @@ Resumen:
 ## Hub (manifest)
 
 Registrá la app con **`iframeUrl`** apuntando a la URL pública del servicio (patrón Streamlit). **No** modifiques el manifest del hub desde este seed salvo pedido explícito del equipo.
+
+## SDK auth (sin login)
+
+Este seed consume el SDK npm `@boogiepop/auth-sdk` (repo separado: `https://github.com/blanck1945/boogiepop-auth-sdk`) para que las apps consumidoras:
+
+- no implementen login local,
+- sólo consuman sesión/roles ya emitidos por el host,
+- consulten `GET /api/auth/me` cuando tengan token.
+
+API principal:
+
+- `resolveBoogiepopSession(options?)` desde `@boogiepop/auth-sdk`
+- `useBoogiepopSession(options?)` desde `@boogiepop/auth-sdk/react`
+- `hasRole(snapshot, role)`
+- `hasAnyRole(snapshot, roles)`
+
+Patrón recomendado: **`POST /api/auth/login` sólo en host**; Next/otros remotes usan el token recibido y llaman `/api/auth/me` mediante el SDK.
 
 ## Licencia
 

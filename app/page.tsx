@@ -1,4 +1,5 @@
 import { AwsDemoPanel } from './components/AwsDemoPanel'
+import { AuthSdkPanel } from './components/AuthSdkPanel'
 
 const features = [
   {
@@ -67,6 +68,8 @@ export default function Home() {
         <div id="demo-aws" className="mt-12">
           <AwsDemoPanel />
         </div>
+
+        <AuthSdkPanel />
 
         <section className="mt-12 space-y-3 st-card">
           <h2 className="text-lg font-semibold text-st-body">Variables de entorno</h2>
