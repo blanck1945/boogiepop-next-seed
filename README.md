@@ -85,7 +85,7 @@ Registrá la app con **`iframeUrl`** apuntando a la URL pública del servicio (p
 
 ## SDK auth (sin login)
 
-Este seed consume el SDK npm `@boogiepop/auth-sdk` (repo separado: `https://github.com/blanck1945/boogiepop-auth-sdk`) para que las apps consumidoras:
+Este seed consume el SDK npm `boogiepop-auth-sdk` (repo separado: `https://github.com/blanck1945/boogiepop-auth-sdk`) para que las apps consumidoras:
 
 - no implementen login local,
 - sólo consuman sesión/roles ya emitidos por el host,
@@ -93,8 +93,8 @@ Este seed consume el SDK npm `@boogiepop/auth-sdk` (repo separado: `https://gith
 
 API principal:
 
-- `resolveBoogiepopSession(options?)` desde `@boogiepop/auth-sdk`
-- `useBoogiepopSession(options?)` desde `@boogiepop/auth-sdk/react`
+- `resolveBoogiepopSession(options?)` desde `boogiepop-auth-sdk`
+- `useBoogiepopSession(options?)` desde `boogiepop-auth-sdk/react`
 - `hasRole(snapshot, role)`
 - `hasAnyRole(snapshot, roles)`
 

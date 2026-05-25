@@ -1,7 +1,7 @@
 'use client'
 
-import { useBoogiepopSession } from '@boogiepop/auth-sdk/react'
-import { hasRole } from '@boogiepop/auth-sdk'
+import { useBoogiepopSession } from 'boogiepop-auth-sdk/react'
+import { hasRole } from 'boogiepop-auth-sdk'
 
 export function AuthSdkPanel() {
   const { snapshot, isHydrating } = useBoogiepopSession({
