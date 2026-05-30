@@ -9,3 +9,8 @@
 - **CI:** GitLab — lint, `next build`, Docker arm64 → ECR, ECS update
 
 Variables: ver [README.md](../README.md) y `.env.example`.
+
+## Paquetes internos Boogiepop
+
+- **`boogiepop-auth-sdk`** — `useBoogiepopSession()` (hook client), `resolveBoogiepopSession()` (server), `hasRole/hasWorkspace/hasAbility`
+- **`boogiepop-ui`** — componentes `Button, Card, Input, Select, Text`; tokens `--bp-*`; clases `.bp-btn-primary`, `.bp-card`, etc. Estilos importados en `app/globals.css`.

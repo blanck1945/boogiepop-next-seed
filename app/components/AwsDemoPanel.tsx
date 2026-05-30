@@ -38,29 +38,29 @@ export function AwsDemoPanel() {
   }
 
   return (
-    <section className="st-card space-y-4">
+    <section className="bp-card space-y-4">
       <div className="space-y-2">
-        <h2 className="text-lg font-semibold text-st-body">Demo AWS (servidor)</h2>
-        <p className="max-w-2xl text-st-muted-text">
+        <h2 className="text-lg font-semibold text-bp-body">Demo AWS (servidor)</h2>
+        <p className="max-w-2xl text-bp-muted">
           Este botón llama a{' '}
-          <span className="st-inline-code">GET /api/aws-demo</span> en el mismo proceso Node.
+          <span className="bp-inline-code">GET /api/aws-demo</span> en el mismo proceso Node.
           Las credenciales AWS viven en el servidor (env local o task role IAM en ECS), no en el
           navegador.
         </p>
       </div>
 
-      <button type="button" className="st-btn-primary" disabled={loading} onClick={runDemo}>
+      <button type="button" className="bp-btn-primary" disabled={loading} onClick={runDemo}>
         {loading ? 'Consultando…' : 'Probar conexión AWS'}
       </button>
 
       {fetchError ? (
-        <pre className="overflow-x-auto rounded-md bg-st-muted-bg p-3 text-sm text-st-body">
+        <pre className="overflow-x-auto rounded-md bg-bp-muted-bg p-3 text-sm text-bp-body">
           {fetchError}
         </pre>
       ) : null}
 
       {result ? (
-        <pre className="overflow-x-auto rounded-md bg-st-muted-bg p-3 text-sm text-st-body">
+        <pre className="overflow-x-auto rounded-md bg-bp-muted-bg p-3 text-sm text-bp-body">
           {JSON.stringify(result, null, 2)}
         </pre>
       ) : null}

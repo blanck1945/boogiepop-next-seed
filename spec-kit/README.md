@@ -2,6 +2,12 @@
 
 Índice para agentes. Contrato vinculante: [AGENTS.md](../AGENTS.md).
 
+## Entradas automáticas por herramienta
+
+- **Claude Code** carga [CLAUDE.md](../CLAUDE.md) automáticamente → apunta a AGENTS.md.
+- **Cursor** carga [.cursor/rules/seed-contract.mdc](../.cursor/rules/seed-contract.mdc) automáticamente → apunta a AGENTS.md.
+- **Otros agentes** leen [AGENTS.md](../AGENTS.md) directamente (fuente de verdad única).
+
 ## Orden de lectura
 
 1. [AGENTS.md](../AGENTS.md)

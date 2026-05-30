@@ -13,7 +13,8 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "boogiepop-auth-sdk": "0.1.0",
+    "boogiepop-auth-sdk": "file:../boogiepop-auth-sdk",
+    "boogiepop-ui": "file:../boogiepop-ui",
     "@aws-sdk/client-s3": "3.1053.0",
     "next": "15.5.18",
     "react": "19.1.0",

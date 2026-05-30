@@ -1,0 +1,18 @@
+---
+description: Contrato del seed Next.js fullstack para Cursor
+globs: ["**/*"]
+alwaysApply: true
+---
+
+Leé AGENTS.md antes de hacer cambios.
+
+Archivos protegidos (no modificar sin consenso):
+- next.config.ts (output standalone, basePath — contractuales con ECS)
+- Dockerfile (puerto 8080 y healthcheck son contractuales)
+- .github/workflows/, .gitlab-ci.yml (coordinar con infra)
+
+Regla crítica: AWS SDK (@aws-sdk/*) solo en servidor — Route Handlers, Server Actions, lib/.
+Nunca importar @aws-sdk en componentes con 'use client'.
+
+UI: usa componentes de `boogiepop-ui` (Button, Card, Input, Select, Text) y clases .bp-*.
+Auth: `boogiepop-auth-sdk` — useBoogiepopSession() client-side, resolveBoogiepopSession() server-side.
