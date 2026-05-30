@@ -6,6 +6,11 @@ on:
   pull_request:
 
 jobs:
+  protected-files:
+    uses: blanck1945/boogiepop-platform-guards/.github/workflows/protected-files.yml@main
+    with:
+      owner_username: blanck1945
+
   ci:
     runs-on: ubuntu-latest
     steps:
