@@ -2,6 +2,50 @@
 
 Seed **Next.js (App Router) + React + TypeScript** con **Route Handlers** y **`@aws-sdk/*`** en el **mismo repositorio**. Desplegable con el mismo flujo que [boogiepop-react-seed](../boogiepop-react-seed): **Docker → ECR → ECS** (puerto **8080**, health **`/health`**).
 
+---
+
+## En la plataforma
+
+```mermaid
+graph TD
+    HOST["boogiepop-host\nHost — puede embeber este seed\nvía iframe (iframeUrl en manifest)"]
+    SEED["boogiepop-next-seed\nNext.js 15 App Router\nUI + Route Handlers en un repo\n← este repo"]
+    UI["boogiepop-ui\nComponentes compartidos\nbp-* tokens / clases"]
+    AUTH["boogiepop-auth-sdk\nuseBoogiepopSession() — client\nresolveBoogiepopSession() — server"]
+    BACKEND["boogiepop-backend\nAPI REST\nPOST /api/auth/login\nGET /api/auth/me"]
+    AWS["AWS SDK\nS3 / otros servicios\nsolo en Route Handlers — nunca client"]
+    GUARDS["boogiepop-platform-guards\nCI guard — protege AGENTS.md\ny .github/workflows/"]
+    CLI["boogiepop-cli\nbp update / bp versions\ngestión de versiones del seed"]
+    ECR["Amazon ECR\nRegistro de imágenes Docker"]
+    ECS["Amazon ECS\nServicio en producción\npuerto 8080 — Node standalone"]
+
+    HOST -->|"iframe embed\n(opcional)"| SEED
+    SEED -->|"import components"| UI
+    SEED -->|"useBoogiepopSession()\nresolveBoogiepopSession()"| AUTH
+    AUTH -->|"GET /api/auth/me"| BACKEND
+    HOST -->|"POST /api/auth/login"| BACKEND
+    SEED -->|"Route Handlers\nserver-side only"| AWS
+
+    SEED -->|"Docker build → push"| ECR
+    ECR -->|"force-new-deployment"| ECS
+
+    GUARDS -->|"required status check\nbranch protection"| SEED
+    CLI -->|"boogiepop update\naplicar cambios del template"| SEED
+```
+
+| Parte | Rol respecto a este seed |
+|-------|--------------------------|
+| `boogiepop-host` | Puede embeber este seed via `iframeUrl` en el manifest del hub |
+| `boogiepop-ui` | Componentes React compartidos (`Button`, `Card`, `Input`, etc.) |
+| `boogiepop-auth-sdk` | Client: `useBoogiepopSession()` — Server: `resolveBoogiepopSession()` |
+| `boogiepop-backend` | Provee `GET /api/auth/me`; el login vive en el host |
+| AWS SDK | Usado exclusivamente en Route Handlers (server) — nunca en componentes client |
+| `boogiepop-platform-guards` | Guard de CI que bloquea merges no autorizados sobre archivos protegidos |
+| `boogiepop-cli` | Gestiona versiones del seed — `bp update` aplica cambios del template |
+| AWS ECR / ECS | Imagen Docker `output: standalone`, servida en puerto 8080 |
+
+---
+
 Para convenciones de agentes: **[AGENTS.md](AGENTS.md)**.
 
 ## ¿Este seed o react-seed?
