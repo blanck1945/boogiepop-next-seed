@@ -1,17 +1,24 @@
 # syntax=docker/dockerfile:1
+# Build context: parent directory (CI) or repo root with --build-context flags
+# CI workflow checks out sibling deps alongside this repo so file: paths resolve.
 
 ARG NODE_VERSION=22
 FROM node:${NODE_VERSION}-alpine AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
+WORKDIR /workspace
+
+# Copy sibling packages (available when build context is parent dir in CI)
+COPY boogiepop-auth-sdk/ ./boogiepop-auth-sdk/
+COPY boogiepop-ui/       ./boogiepop-ui/
+
+WORKDIR /workspace/app
+COPY boogiepop-next-seed/package.json boogiepop-next-seed/package-lock.json ./
 RUN npm ci
 
 FROM deps AS builder
-WORKDIR /app
-COPY . .
+WORKDIR /workspace/app
+COPY boogiepop-next-seed/ .
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Prefijo ALB HTTP (ej. /next). Vacío en dev local o subdominio HTTPS dedicado.
 ARG NEXT_BASE_PATH=
 ENV NEXT_BASE_PATH=${NEXT_BASE_PATH}
 
@@ -28,9 +35,9 @@ RUN apk add --no-cache wget \
   && addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /workspace/app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /workspace/app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /workspace/app/.next/static ./.next/static
 
 USER nextjs
 EXPOSE 8080
